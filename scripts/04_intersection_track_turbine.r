@@ -69,42 +69,52 @@ klm_211307 <- klm_211307 %>% filter(Latitude2 >0)
 klm_211307_sf <- klm_211307_sf %>% filter(Latitude >0)
 mapview(klm_211307_sf)
 
-# make line between points
-klm_211282_sf_line <- klm_211282_sf %>%
-  summarise(do_union = F) %>%
-  st_cast("LINESTRING") 
-klm_211307_sf_line <- klm_211307_sf %>%
-  summarise(do_union = F) %>%
-  st_cast("LINESTRING") 
-klm_211093_sf_line <- klm_211093_sf %>%
-  summarise(do_union = F) %>%
-  st_cast("LINESTRING")
+
+############################################
+#Loading of overall combined data set
+#WE CAN FILTER THIS DATA SET TO ONLY INCLUDE THE IBERIAN DATA POINTS!!!! MAKES THE FILE MUCH SMALLER
+combined_data_csv <- read_csv("C:/Users/daank/OneDrive - University of Twente/Documents/Rijksuniversiteit Groningen/Year 1 - 24-25/Flyway Ecology/Mini project - Gull migration wind farms/Bird tracks/combined_gps_tracks.csv") |>
+  #Filter for the Iberian region only, latitude between 45.1 and 34.8 and longitude between -10.2 and 4.9
+  dplyr::filter(Latitude > 34.8, Latitude < 45.1, Longitude > -10.2, Longitude < 4.9) |>
+  dplyr::filter(Latitude > 0) #Filter out the empty points
+
+#Make the CSV file spatial
+combined_data_csv_sf <- st_as_sf(x = combined_data_csv, 
+                                 coords = c("Longitude", "Latitude"),
+                                 crs = 4326)
+
+
+
+############################################
+#Original script
+
+# make line between points STILL REQUIRE A LINE PER DEVICE_ID!!!!
+combined_data_csv_sf_line <- combined_data_csv_sf %>%
+  group_by(device_id) %>%          # Group data by bird ID
+  summarise(do_union = FALSE) %>%  # Prevent merging of geometries
+  st_cast("LINESTRING")            # Cast points to lines within each group 
 
 # make buffer around windturbines
 windturbines_100m <- st_buffer(windturbines, 200)
 windturbines_1000m <- st_buffer(windturbines, 1000)
 windturbines_2000m <- st_buffer(windturbines, 2000)
 
-klm_211307_10000 <- st_buffer(klm_211307_sf_line, 10000)
-klm_211282_10000 <- st_buffer(klm_211282_sf_line, 10000)
-klm_211093_10000 <- st_buffer(klm_211093_sf_line, 10000)
-
+combined_data_csv_sf_10000 <- st_buffer(combined_data_csv_sf_line, 10000)
 
 # intersection between 2000m buffer of individual and windturbines
-intersection_10000_1 <- st_intersection(klm_211307_10000, windturbines)
-intersection_10000_2 <- st_intersection(klm_211282_10000, windturbines)
+#DONT WE NEED HERE TO USE THE BUFFERED WINDTURBINES DATA HERE???
+intersection_10000 <- st_intersection(combined_data_csv_sf_10000, windturbines)
 
 #### plot the interactive maps with individual tracks and wind turbines ####
-mapview(klm_211282_sf) + mapview(klm_211282_sf_line)
-mapview(klm_211307_sf) + mapview(klm_211307_sf_line)
+combined_data_csv_sf$device_id <- as.factor(combined_data_csv_sf$device_id)
+combined_data_csv_sf_line$device_id <- as.factor(combined_data_csv_sf_line$device_id)
+mapview(combined_data_csv_sf, zcol = "device_id") + mapview(combined_data_csv_sf_line, zcol = "device_id")
 
-mapview(klm_211282_10000, color = "yellow",col.regions = "yellow", map.types = "CartoDB.Positron") + # map.types sets the theme to light theme
-  mapview(klm_211307_10000, color = "blue") + 
+mapview(combined_data_csv_sf_10000, , map.types = "CartoDB.Positron") + # map.types sets the theme to light theme
   mapview(windturbines, col.regions = "red", color = "red",alpha = 0.2, cex = 2)+ 
-  mapview(intersection_10000_1) + 
-  mapview(intersection_10000_2)
+  mapview(intersection_10000_1)
 
-
+#WHAT DOES THIS PART DO???
 windturbines_combined <- rbind(intersection_10000_1, intersection_10000_2)
 mapview(windturbines_combined
 

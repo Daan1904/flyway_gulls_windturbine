@@ -62,6 +62,9 @@ combined_data_csv <- file_list_csv |>
   lapply(read_csv) |>   # Read each file into a data frame
   bind_rows()           # Combine all data frames row-wise
 
+# Save the combined data to a new CSV file if needed
+write_csv(combined_data_csv, "C:/Users/daank/OneDrive - University of Twente/Documents/Rijksuniversiteit Groningen/Year 1 - 24-25/Flyway Ecology/Mini project - Gull migration wind farms/Bird tracks/combined_gps_tracks.csv")
+
 # View the combined data
 head(combined_data_csv)
 
