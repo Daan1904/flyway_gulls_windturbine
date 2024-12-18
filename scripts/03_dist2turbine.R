@@ -58,9 +58,12 @@ folder_path <- "C:/Users/daank/OneDrive - University of Twente/Documents/Rijksun
 file_list_csv <- list.files(path = folder_path, pattern = "*.csv", full.names = TRUE)
 
 # Read and combine all files into one data frame
-combined_data_csv <- file_list_csv |>
+combined_data_csv1 <- file_list_csv |>
   lapply(read_csv) |>   # Read each file into a data frame
   bind_rows()           # Combine all data frames row-wise
+
+comb_csv_coord <- combined_data_csv1 |>
+  select(device_id, UTC_datetime, Latitude, Longitude, Altitude_m)
 
 # Save the combined data to a new CSV file if needed
 write_csv(combined_data_csv, "C:/Users/daank/OneDrive - University of Twente/Documents/Rijksuniversiteit Groningen/Year 1 - 24-25/Flyway Ecology/Mini project - Gull migration wind farms/Bird tracks/combined_gps_tracks.csv")
@@ -76,9 +79,21 @@ combined_data_txt <- file_list_txt |>
   lapply(read_delim, delim = ",") |>  # Adjust delimiter if needed
   bind_rows()                          # Combine all data frames row-wise
 
+comb_txt_coord <- combined_data_txt |>
+  select(device_id, UTC_datetime, Latitude2, Longitude2, Altitude_m) |>
+  rename(Latitude = Latitude2, Longitude = Longitude2)
+
+#Save file
+write_csv(combined_data_txt, "C:/Users/daank/OneDrive - University of Twente/Documents/Rijksuniversiteit Groningen/Year 1 - 24-25/Flyway Ecology/Mini project - Gull migration wind farms/Bird tracks/txt_combined_gps_tracks.csv")
+
 #Combine CSV and TXT files
-#DOES NOT WORK... --> THE TXT AND CSV FILES ARE CONTAINING DIFFERENT NUMBERS OF COLUMNS
-combined_data <- bind_rows(combined_data_csv, combined_data_txt)
+# make dates for txt
+comb_txt_coord$UTC_datetime <- dmy_hms(comb_txt_coord$UTC_datetime)
+
+combined_data_coord <- bind_rows(comb_csv_coord, comb_txt_coord)
+
+# Save the combined data to a CSV file
+write_csv(combined_data_coord, "C:/Users/daank/OneDrive - University of Twente/Documents/Rijksuniversiteit Groningen/Year 1 - 24-25/Flyway Ecology/Mini project - Gull migration wind farms/Bird tracks/combined_gps_tracks_coord.csv")
 
 
 #Make the CSV file spatial
